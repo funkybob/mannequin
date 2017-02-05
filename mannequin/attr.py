@@ -58,3 +58,9 @@ class NumberAttr(Attr):
         if isinstance(value, float):
             return value
         return float(value)
+
+
+class BoolAttr(Attr):
+
+    def store(self, value):
+        return bool(value)
