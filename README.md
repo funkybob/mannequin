@@ -18,13 +18,13 @@ of models, in future] to help validate data.
 
 ```
 from mannequin import models
-from mannequin import attr
-from mannequit.stores import botostore
+from mannequin import attrs
+from mannequin.stores import botostore
 
 
 class SimpleModel(models.Model):
-    name = attr.StringValue()
-    age = attr.IntValue()
+    name = attrs.StringValue()
+    age = attrs.IntValue()
 
 
 SimpleStore = botostore.DynamoStore(SimpleModel, hash_key='name')
