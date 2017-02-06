@@ -1,1 +1,10 @@
+# Python droppings
 *.pyc
+
+# Coverage
+.coverage
+htmlcov/
+
+# Virtualenv
+venv/
+
