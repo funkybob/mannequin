@@ -10,22 +10,25 @@ class Attr(object):
         self.default = default
 
     def __get__(self, instance, owner):
-        if instance:
-            try:
-                value = instance.__data[self.key]
-            except KeyError:
-                if self.default is NODEFAULT:
-                    raise AttributeError
-                value = self.default
-            if value is None and self.null:
-                return value
-            return self.restore(value)
+        if not instance:
+            return self
+
+        try:
+            value = instance._data[self.name]
+        except KeyError:
+            if self.default is NODEFAULT:
+                raise AttributeError
+            value = self.default
+        if value is None and self.null:
+            return value
+        return self.restore(value)
 
     def __set__(self, instance, value):
+        print(instance, value)
         if instance:
             if not (self.null and value is None):
                 value = self.store(value)
-            instance.__data[self.key] = value
+            instance._data[self.name] = value
 
     def store(self, value):
         return value
