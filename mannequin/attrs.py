@@ -24,7 +24,6 @@ class Attr(object):
         return self.restore(value)
 
     def __set__(self, instance, value):
-        print(instance, value)
         if instance:
             if not (self.null and value is None):
                 value = self.store(value)
