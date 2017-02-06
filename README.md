@@ -19,7 +19,7 @@ of models, in future] to help validate data.
 ```
 from mannequin import models
 from mannequin import attrs
-from mannequin.stores import botostore
+from mannequin.stores import dynamodb
 
 
 class SimpleModel(models.Model):
@@ -27,7 +27,7 @@ class SimpleModel(models.Model):
     age = attrs.IntValue()
 
 
-SimpleStore = botostore.DynamoStore(SimpleModel, hash_key='name')
+SimpleStore = dynamodb.DynamoStore(SimpleModel, hash_key='name')
 
 obj = SimpleModel(name='Bob', age=42)
 SimpleStore.save(obj)
