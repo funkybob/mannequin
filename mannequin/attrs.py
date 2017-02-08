@@ -1,3 +1,5 @@
+import uuid
+
 
 class NODEFAULT:
     pass
@@ -68,3 +70,20 @@ class BoolAttr(Attr):
 
     def store(self, value):
         return bool(value)
+
+
+class UUIDAttr(Attr):
+
+    def store(self, value):
+        if isinstance(value, uuid.UUID):
+            return value
+        return uuid.UUID(value)
+
+
+
+class DateTimeAttr(Attr):
+
+    def store(self, value):
+        if isinstance(value, datetime):
+            return value
+        return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
