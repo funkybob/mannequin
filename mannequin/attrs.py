@@ -19,6 +19,8 @@ class Attr(object):
             if self.default is NODEFAULT:
                 raise AttributeError
             value = self.default
+            if callable(value):
+                value = value()
         if value is None and self.null:
             return value
         return self.restore(value)
