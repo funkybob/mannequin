@@ -5,8 +5,11 @@ from .base import BaseStore
 
 
 class DynamoStore(BaseStore):
+    # XXX Provide way to define ProvisionedThroughput
+    # XXX Provide way to declare LSI and GSI
+    # -> Make them create new storage classes?
     def __init__(self, model, hash_key=None, range_key=None, table=None,
-                 client=None):
+                 client=None, with_extra=False):
         super(DynamoStore, self).__init__(model)
         if client is None:
             session = botocore.session.get_session()
@@ -15,6 +18,7 @@ class DynamoStore(BaseStore):
         if table is None:
             table = model.__name__
         self.table = table
+        self.with_extra = with_extra
         # XXX Validate these keys exist in the model fields!
         self.hash_key = hash_key
         assert hash_key in self.model._fields
@@ -37,18 +41,26 @@ class DynamoStore(BaseStore):
         item = resp.get('Item')
         if not item:
             raise KeyError()
-        return self.model(**{
+        inst = self.model(**{
             key: value.values()[0]
             for key, value in item.items()
         })
+        inst._from = self
+        return inst
 
     def save(self, model):
+        item_data = {
+            field: self.value_for_field(field, getattr(model, field))
+            for field in self.model._fields
+        }
+        if self.with_extra and model._extra:
+            item_data.update({
+                key: {self.type_for_value(value): str(value)}
+                for key, value in model._extra.items()
+            })
         self.client.put_item(
             TableName=self.table,
-            Item={
-                field: self.value_for_field(field, getattr(model, field))
-                for field in self.model._fields
-            }
+            Item=item_data,
         )
 
     def build_key(self, hash_key, range_key):
@@ -68,6 +80,19 @@ class DynamoStore(BaseStore):
             return 'N'
         if isinstance(field, attrs.BoolAttr):
             return 'BOOL'
+        return 'S'
+
+    def type_for_value(self, value):
+        if isinstance(value, (int, float)):  # Decimal
+            return 'N'
+        if isinstance(value, bool):
+            return 'BOOL'
+        if isinstance(value, bytes):
+            return 'B'
+        if isinstance(value, unicode):
+            return 'S'
+        if value is None:
+            return 'NULL'
         return 'S'
 
     def create_table(self):
