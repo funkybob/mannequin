@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.parser import parse
 import uuid
 
 
@@ -86,5 +87,5 @@ class DateTimeAttr(Attr):
 
     def store(self, value):
         if isinstance(value, datetime):
-            return value
-        return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            return value.replace(microsecond=0)
+        return parse(value)
