@@ -31,7 +31,7 @@ class Model(object):
         try:
             return self._extra[name]
         except KeyError:
-            raise AttributeError
+            raise AttributeError(name)
 
     def __setattr__(self, name, value):
         if not name in self._fields and name not in {'_data', '_extra'}:
