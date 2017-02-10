@@ -49,10 +49,12 @@ class DynamoStore(BaseStore):
         return inst
 
     def save(self, model):
-        item_data = {
-            field: self.value_for_field(field, getattr(model, field))
-            for field in self.model._fields
-        }
+        item_data = {}
+        for field in self.model._fields:
+            try:
+                item_data[field] = self.value_for_field(field, getattr(model, field))
+            except AttributeError:
+                pass
         if self.with_extra and model._extra:
             item_data.update({
                 key: {self.type_for_value(value): str(value)}
