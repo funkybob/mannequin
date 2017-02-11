@@ -17,5 +17,8 @@ class BaseStore(object):
     def save(self, model, **kwargs):
         raise NotImplementedError
 
+    def delete(self, model):
+        raise NotImplementedError
+
     def filter(self, **kwargs):
         raise NotImplementedError
