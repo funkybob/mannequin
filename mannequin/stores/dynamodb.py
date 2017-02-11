@@ -2,7 +2,6 @@ from datetime import datetime
 
 import boto3
 
-from .. import attrs
 from .base import BaseStore
 
 dynamodb = boto3.resource('dynamodb')
@@ -27,22 +26,38 @@ class DynamoStore(BaseStore):
         if range_key is not None:
             assert range_key in self.model._fields
 
+    def _build_key(self, hash_key, range_key=None):
+        key = {
+            self.hash_key: hash_key,
+        }
+        if self.range_key:
+            key[self.range_key] = range_key
+        return key
+
+    def _get_key(self, model):
+        key = {
+            self.hash_key: getattr(model, self.hash_key),
+        }
+        if self.range_key:
+            key[self.range_key] = getattr(model, self.range_key)
+        return key
+
     def get(self, hash_key, range_key=None):
         if self.range_key and range_key is None:
             raise ValueError(
                 'Model {} requires range_key for {}'.format(self.model, self)
             )
-        key = self.build_key(hash_key, range_key)
+        key = self._build_key(hash_key, range_key)
 
-        resp = self.client.get_item(Key=key)
+        resp = self.client.get_item(
+            Key=key,
+            ReturnConsumedCapacity='NONE',
+        )
 
         item = resp.get('Item')
         if not item:
-            raise KeyError()
-        inst = self.model(**{
-            key: value
-            for key, value in item.items()
-        })
+            raise LookupError()
+        inst = self.model(**item)
         return inst
 
     def save(self, model):
@@ -58,12 +73,48 @@ class DynamoStore(BaseStore):
                 item_data[field] = value
         if self.with_extra and model._extra:
             item_data.update(model._extra)
-        self.client.put_item(Item=item_data)
+        self.client.put_item(
+            Item=item_data,
+            ReturnConsumedCapacity='NONE',
+            ReturnItemCollectionMetrics='NONE',
+        )
 
-    def build_key(self, hash_key, range_key=None):
-        key = {
-            self.hash_key: hash_key,
-        }
-        if self.range_key:
-            key[self.range_key] = range_key
-        return key
+    def delete(self, model):
+        key = self._get_key(model)
+
+        self.client.delete_item(
+            Key=key,
+            ReturnConsumedCapacity='NONE',
+            ReturnItemCollectionMetrics='NONE',
+        )
+
+    def filter(self, **kwargs):
+        extra = {}
+        index_name = kwargs.pop('_index', None)
+        if index_name:
+            extra['IndexName'] = index_name
+        resp = self.client.scan(
+            FilterExpression=kwargs,
+            ReturnConsumedCapacity='NONE',
+            **extra
+        )
+        items = resp['Items']
+        if not items:
+            raise LookupError()
+        return [
+            self.model(**item)
+            for item in items
+        ]
+
+    def query(self, table, index=None, **kwargs):
+        resp = self.client.query(
+            FilterExpression=kwargs,
+            ReturnConsumedCapacity='NONE',
+        )
+        items = resp['Items']
+        if not items:
+            raise LookupError()
+        return [
+            self.model(**item)
+            for item in items
+        ]
