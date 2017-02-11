@@ -34,7 +34,7 @@ class Model(object):
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        if not name in self._fields and name not in {'_data', '_extra'}:
-           self._extra[name] = value
+        if name not in self._fields and name not in {'_data', '_extra'}:
+            self._extra[name] = value
         else:
             super(Model, self).__setattr__(name, value)

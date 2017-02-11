@@ -82,7 +82,6 @@ class UUIDAttr(Attr):
         return uuid.UUID(value)
 
 
-
 class DateTimeAttr(Attr):
 
     def store(self, value):
