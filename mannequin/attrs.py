@@ -25,6 +25,7 @@ class Attr(object):
             value = self.default
             if callable(value):
                 value = value()
+            setattr(instance, self.name, value)
         if value is None and self.null:
             return value
         return self.restore(value)
