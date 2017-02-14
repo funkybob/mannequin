@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 import boto3
@@ -70,6 +71,8 @@ class DynamoStore(BaseStore):
             else:
                 if isinstance(value, datetime):
                     value = value.isoformat()
+                elif isinstance(value, uuid.UUID):
+                    value = str(value)
                 item_data[field] = value
         if self.with_extra and model._extra:
             item_data.update(model._extra)
