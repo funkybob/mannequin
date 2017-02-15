@@ -7,6 +7,9 @@ from .base import BaseStore
 
 dynamodb = boto3.resource('dynamodb')
 
+import logging
+log = logging.getLogger()
+log.setLevel(logging.INFO)
 
 class DynamoStore(BaseStore):
     # XXX Provide way to define ProvisionedThroughput
@@ -92,31 +95,28 @@ class DynamoStore(BaseStore):
         )
 
     def filter(self, **kwargs):
-        extra = {}
         index_name = kwargs.pop('_index', None)
         if index_name:
             extra['IndexName'] = index_name
+        extra = dict(kwargs)
         resp = self.client.scan(
-            FilterExpression=kwargs,
             ReturnConsumedCapacity='NONE',
             **extra
         )
         items = resp['Items']
-        if not items:
-            raise LookupError()
         return [
             self.model(**item)
             for item in items
         ]
 
-    def query(self, table, index=None, **kwargs):
+    def query(self, _index=None, **kwargs):
+        if _index:
+            kwargs['IndexName'] = _index
         resp = self.client.query(
-            FilterExpression=kwargs,
             ReturnConsumedCapacity='NONE',
+            **kwargs
         )
         items = resp['Items']
-        if not items:
-            raise LookupError()
         return [
             self.model(**item)
             for item in items
