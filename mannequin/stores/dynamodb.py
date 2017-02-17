@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 import boto3
 
@@ -76,6 +77,8 @@ class DynamoStore(BaseStore):
                     value = value.isoformat()
                 elif isinstance(value, uuid.UUID):
                     value = str(value)
+                elif isinstance(value, float):
+                    value = Decimal(value)
                 item_data[field] = value
         if self.with_extra and model._extra:
             item_data.update(model._extra)
