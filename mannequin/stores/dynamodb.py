@@ -65,6 +65,18 @@ class DynamoStore(BaseStore):
         inst = self.model(**item)
         return inst
 
+
+    CASTERS = [
+        ((datetime, date, time), lambda x: x.isoformat()),
+        (uuid.UUID, str),
+        (float, Decimal),
+    ]
+    def to_storage(self, value):
+        for base, func in self.CASTERS:
+            if isinstance(value, base):
+                return func(value)
+        return value
+
     def save(self, model):
         item_data = {}
         for field in self.model._fields:
@@ -73,13 +85,7 @@ class DynamoStore(BaseStore):
             except AttributeError:
                 pass
             else:
-                if isinstance(value, datetime):
-                    value = value.isoformat()
-                elif isinstance(value, uuid.UUID):
-                    value = str(value)
-                elif isinstance(value, float):
-                    value = Decimal(value)
-                item_data[field] = value
+                item_data[field] = self.to_storage(value)
         if self.with_extra and model._extra:
             item_data.update(model._extra)
         self.client.put_item(
