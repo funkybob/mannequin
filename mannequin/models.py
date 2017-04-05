@@ -13,8 +13,9 @@ class MetaModel(type):
             if isinstance(prop, Attr)
         }
 
-        for field in klass._fields:
-            getattr(klass, field).name = field
+        for field, prop in klass._fields.items():
+            prop.name = field
+
         return klass
 
 
