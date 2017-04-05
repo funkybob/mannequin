@@ -12,6 +12,7 @@ import logging
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
+
 class DynamoStore(BaseStore):
     # XXX Provide way to define ProvisionedThroughput
     # XXX Provide way to declare LSI and GSI
@@ -65,12 +66,12 @@ class DynamoStore(BaseStore):
         inst = self.model(**item)
         return inst
 
-
     CASTERS = [
         ((datetime, date, time), lambda x: x.isoformat()),
         (uuid.UUID, str),
         (float, Decimal),
     ]
+
     def to_storage(self, value):
         for base, func in self.CASTERS:
             if isinstance(value, base):
@@ -103,11 +104,10 @@ class DynamoStore(BaseStore):
             ReturnItemCollectionMetrics='NONE',
         )
 
-    def filter(self, **kwargs):
-        index_name = kwargs.pop('_index', None)
-        if index_name:
-            extra['IndexName'] = index_name
+    def filter(self, _index=None, **kwargs):
         extra = dict(kwargs)
+        if _index:
+            extra['IndexName'] = _index
         resp = self.client.scan(
             ReturnConsumedCapacity='NONE',
             **extra
@@ -119,11 +119,12 @@ class DynamoStore(BaseStore):
         ]
 
     def query(self, _index=None, **kwargs):
+        extra = dict(kwargs)
         if _index:
-            kwargs['IndexName'] = _index
+            extra['IndexName'] = _index
         resp = self.client.query(
             ReturnConsumedCapacity='NONE',
-            **kwargs
+            **extra
         )
         items = resp['Items']
         return [
