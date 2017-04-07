@@ -18,8 +18,10 @@ def validate(data, obj, fields=None, exclude=None):
             continue
         if exclude and field in exclude:
             continue
-        if field not in data and obj._fields[field].default is NODEFAULT:
-            raise ValidationError(field, 'A value is required')
+        if field not in data:
+            if obj._fields[field].default is NODEFAULT:
+                raise ValidationError(field, 'A value is required')
+            continue
         try:
             setattr(obj, field, data[field])
         except (TypeError, ValueError) as e:
