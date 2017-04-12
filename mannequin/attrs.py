@@ -2,12 +2,14 @@ from datetime import datetime
 from dateutil.parser import parse
 import uuid
 
+from . import query
+
 
 class NODEFAULT:
     pass
 
 
-class Attr(object):
+class Attr(query.Comparable):
     def __init__(self, null=False, default=NODEFAULT):
         self.name = None
         self.null = null
