@@ -25,7 +25,7 @@ def validate(data, obj, fields=None, exclude=None):
         try:
             setattr(obj, field, data[field])
         except (TypeError, ValueError) as e:
-            errors[field] = args[0]
+            errors[field] = e.args[0]
         except ValidationError as e:
             errors[e.field] = e.message
 
