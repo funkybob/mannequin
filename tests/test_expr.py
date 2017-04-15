@@ -10,17 +10,19 @@ class TestModel(Model):
     age = attrs.IntAttr()
 
 
-
 class ExpressionTestCase(unittest.TestCase):
 
     def test_equality(self):
         x = TestModel.name == 6
-        self.assertIsInstance(x, query.EQNode)
+        self.assertIsInstance(x, query.QNode)
+        self.assertEqual(x.op, '=')
         self.assertEqual(x.lhs, TestModel.name)
         self.assertEqual(x.rhs, 6)
 
     def test_compound(self):
         x = (TestModel.age > 6) < 12
-        self.assertIsInstance(x, query.LTNode)
-        self.assertIsInstance(x.lhs, query.GTNode)
+        self.assertIsInstance(x, query.QNode)
+        self.assertEqual(x.op, '<')
+        self.assertIsInstance(x.lhs, query.QNode)
+        self.assertEqual(x.lhs.op, '>')
         self.assertEqual(x.rhs, 12)
