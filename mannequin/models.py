@@ -19,8 +19,7 @@ class MetaModel(type):
         return klass
 
 
-class Model(object):
-    __metaclass__ = MetaModel
+class Model(object, metaclass=MetaModel):
 
     def __init__(self, **kwargs):
         self._data = {}

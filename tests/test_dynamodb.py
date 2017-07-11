@@ -16,8 +16,7 @@ class SimpleModel(models.Model):
     age = attrs.IntAttr()
 
 
-SimpleStore = dynamodb.DynamoStore(SimpleModel, table="simple",
-                                   hash_key='name', client=client)
+SimpleStore = dynamodb.DynamoStore(SimpleModel, table="simple", hash_key='name')
 
 
 class DynamoTestCase(unittest.TestCase):

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, date, time
 from decimal import Decimal
@@ -8,24 +9,20 @@ from .base import BaseStore
 
 dynamodb = boto3.resource('dynamodb')
 
-import logging
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 
 class DynamoStore(BaseStore):
-    # XXX Provide way to define ProvisionedThroughput
-    # XXX Provide way to declare LSI and GSI
-    # -> Make them create new storage classes?
     def __init__(self, model, hash_key=None, range_key=None, table=None,
-                 with_extra=False):
+                 index_name=None, with_extra=False):
         super(DynamoStore, self).__init__(model)
         if table is None:
             table = model.__name__
         self.client = dynamodb.Table(table)
         self.table = table
+        self.index_name = index_name
         self.with_extra = with_extra
-        # XXX Validate these keys exist in the model fields!
         self.hash_key = hash_key
         assert hash_key in self.model._fields
         self.range_key = range_key
@@ -53,7 +50,10 @@ class DynamoStore(BaseStore):
             raise ValueError(
                 'Model {} requires range_key for {}'.format(self.model, self)
             )
-        key = self._build_key(hash_key, range_key)
+        key = self._build_key(
+            self.to_storage(hash_key),
+            self.to_storage(range_key),
+        )
 
         resp = self.client.get_item(
             Key=key,
@@ -104,24 +104,35 @@ class DynamoStore(BaseStore):
             ReturnItemCollectionMetrics='NONE',
         )
 
-    def filter(self, _index=None, **kwargs):
-        extra = dict(kwargs)
-        if _index:
-            extra['IndexName'] = _index
-        resp = self.client.scan(
-            ReturnConsumedCapacity='NONE',
-            **extra
-        )
+    def filter(self, *args, **kwargs):
+        query = {
+            'ReturnConsumedCapacity': 'NONE',
+        }
+
+        if self.index_name:
+            query['IndexName'] = self.index_name
+
+        # Now convert term expressions.
+        # - If field is (hash|range)key, make KeyConditionExpression
+        # - Else add to FilterExpression
+        # If has KeyCondition, OR index_name, use query
+        # XXX Need a way to detect keys of secondary indices
+        # Else use scan
+
+        # FilterExpression
+        # KeyConditionExpression
+        resp = self.client.scan(**query)
         items = resp['Items']
         return [
             self.model(**item)
             for item in items
         ]
 
-    def query(self, _index=None, **kwargs):
+    def query(self, **kwargs):
         extra = dict(kwargs)
-        if _index:
-            extra['IndexName'] = _index
+        if self.index_name:
+            extra['IndexName'] = self.index_name
+
         resp = self.client.query(
             ReturnConsumedCapacity='NONE',
             **extra

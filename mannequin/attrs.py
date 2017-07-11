@@ -56,11 +56,11 @@ class IntAttr(Attr):
 class StringAttr(Attr):
 
     def store(self, value):
-        if isinstance(value, unicode):
-            return value
         if isinstance(value, str):
+            return value
+        if isinstance(value, bytes):
             return value.decode('utf-8')
-        return unicode(value)
+        return str(value)
 
 
 class NumberAttr(Attr):
@@ -91,3 +91,7 @@ class DateTimeAttr(Attr):
         if isinstance(value, datetime):
             return value.replace(microsecond=0)
         return parse(value)
+
+
+class ListAttr(Attr):
+    pass
