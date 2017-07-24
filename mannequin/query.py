@@ -1,3 +1,4 @@
+from functools import partial
 
 
 class Comparable(object):
@@ -36,6 +37,9 @@ class Comparable(object):
 
     def __ror__(self, other):
         return QNode('|', other, self)
+
+    def __getattr__(self, name):
+        return partial(QNode, name)
 
 
 class QNode(Comparable):
